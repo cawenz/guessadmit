@@ -10,7 +10,7 @@
   :root{
     --bg:#0b0221; --bg2:#1a0a3a; --ink:#e8e6ff;
     --green:#39ff14; --cyan:#00f0ff; --pink:#ff2e88; --yellow:#ffe600;
-    --purple:#9d4edd; --dim:#6b5b9a; --red:#ff3b3b;
+    --purple:#9d4edd; --dim:#a99cd6; --red:#ff3b3b;
     --panel:#160730; --line:#3a1d6e;
     --raised:#22094a; --inset:#10052a; --inset2:#0d0426;
     --btn-ink:var(--bg);
@@ -294,6 +294,16 @@
   @media (max-width:520px){
     .vs-arena{flex-direction:column;}
     .vs-badge{justify-content:center; padding:2px 0;}
+  }
+  /* mobile: the corner controls become a docked bottom bar so they never
+     overlap game UI; content gets bottom clearance so nothing hides behind it */
+  @media (max-width: 600px){
+    .float{ left:0; right:0; bottom:0; top:auto;
+      flex-direction:row; justify-content:center; align-items:center; gap:14px;
+      background:var(--panel); padding:9px 10px; box-shadow:0 -3px 0 var(--line); }
+    .float-icons{ gap:10px; }
+    .float .theme-switch{ box-shadow:0 0 0 2px var(--cyan) inset; }
+    body{ padding-bottom:66px; }
   }
 </style>
 </head>
