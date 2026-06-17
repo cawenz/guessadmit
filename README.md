@@ -1,8 +1,15 @@
 # Guess the Admit Rate 🎓
 
-An 8-bit arcade game: a college appears, you guess its acceptance rate. Closest guess
-banks the most coins. Includes hints (rank / applicants / enrollment), a data-centered
-reveal (histogram + boxplot + percentile), and an online high-score leaderboard.
+An 8-bit arcade game about college selectivity, with two modes:
+
+- **🎯 Guess the Rate** — a college appears; guess its acceptance rate. Closest guess banks
+  the most coins. Hints (rank / applicants / enrollment) cost points, and the reveal shows a
+  data-centered breakdown (histogram + boxplot + selectivity percentile).
+- **⚔️ Head-to-Head** — two colleges appear; pick the more selective one (lower acceptance
+  rate). Build the longest streak; one wrong pick ends the run.
+
+Each mode has its own per-difficulty online leaderboard, plus light/dark themes and a
+how-to-play page.
 
 ## Files
 
@@ -66,7 +73,9 @@ PORT=3000 DB_PATH=/var/data/leaderboard.db node server.js
 - `POST /api/score` with JSON `{ initials, score, difficulty, round, meanError }`
   → `{ ok, id, rank, total, top:[…] }`
 
-Difficulty is one of `easy` / `medium` / `hard` — each has its own board.
+`difficulty` is one of `easy` / `medium` / `hard` for Guess-the-Rate, or `vs-easy` /
+`vs-medium` / `vs-hard` for Head-to-Head — six independent boards in total. For
+Head-to-Head rows, `round` holds the run's longest streak and `mean_error` is unused.
 
 ## ⚠️ A note on cheating
 

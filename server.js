@@ -10,7 +10,8 @@ const { DatabaseSync } = require('node:sqlite');
 const PORT    = process.env.PORT || 8765;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'leaderboard.db');
 const ROOT    = __dirname;
-const DIFFS   = new Set(['easy', 'medium', 'hard']);
+// boards: "easy|medium|hard" (guess-the-rate) and "vs-easy|vs-medium|vs-hard" (head-to-head)
+const validDiff = d => /^(vs-)?(easy|medium|hard)$/.test(d);
 
 // ---------- database ----------
 const db = new DatabaseSync(DB_PATH);
@@ -82,7 +83,7 @@ const server = http.createServer((req, res) => {
   // GET /api/leaderboard?difficulty=easy&limit=10
   if (req.method === 'GET' && url.pathname === '/api/leaderboard') {
     const difficulty = String(url.searchParams.get('difficulty') || '').toLowerCase();
-    if (!DIFFS.has(difficulty)) return json(res, 400, { error: 'bad difficulty' });
+    if (!validDiff(difficulty)) return json(res, 400, { error: 'bad difficulty' });
     let limit = parseInt(url.searchParams.get('limit'), 10);
     if (!Number.isFinite(limit) || limit < 1) limit = 10;
     limit = Math.min(limit, 100);
@@ -100,7 +101,7 @@ const server = http.createServer((req, res) => {
       let initials = String(b.initials || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
       if (initials.length === 0) initials = 'AAA';
       const difficulty = String(b.difficulty || '').toLowerCase();
-      if (!DIFFS.has(difficulty)) return json(res, 400, { error: 'bad difficulty' });
+      if (!validDiff(difficulty)) return json(res, 400, { error: 'bad difficulty' });
       const score = Number(b.score);
       if (!Number.isInteger(score) || score < 0 || score > 50_000_000) return json(res, 400, { error: 'bad score' });
       const round = Number.isInteger(Number(b.round)) ? Number(b.round) : 0;

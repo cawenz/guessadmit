@@ -248,6 +248,53 @@
   .about-list .k{color:var(--yellow);}
   .about-foot{font-size:9px; color:var(--dim); text-align:center; margin-top:10px; line-height:1.8;}
   .float-icons{display:flex; gap:6px;}
+
+  /* ---- game-mode selector (title) ---- */
+  .modes{display:flex; gap:10px; justify-content:center; margin:10px 0 4px; flex-wrap:wrap;}
+  .modebtn{flex:1; min-width:180px; background:var(--inset); color:var(--ink); font-size:11px; line-height:1.5;
+    padding:12px 10px; box-shadow:0 0 0 2px var(--line) inset; cursor:pointer; border:none; font-family:inherit;}
+  .modebtn span{display:block; font-size:8px; color:var(--dim); margin-top:5px;}
+  .modebtn.sel{background:var(--panel); color:var(--cyan); box-shadow:0 0 0 3px var(--cyan) inset, 3px 3px 0 var(--shadow);}
+  .modebtn.sel span{color:var(--purple);}
+
+  /* ---- head-to-head ---- */
+  .vs-prompt{text-align:center; font-size:13px; color:var(--ink); margin:6px 0 12px; line-height:1.5;}
+  .vs-prompt span{color:var(--pink);}
+  .vs-prompt .vs-sub{color:var(--dim); font-size:9px;}
+  .vs-arena{display:flex; align-items:stretch; gap:10px; justify-content:center; margin-bottom:12px;}
+  .vs-card{flex:1; min-width:0; background:linear-gradient(180deg,var(--raised),var(--panel)); color:var(--ink);
+    border:3px solid var(--line); box-shadow:4px 4px 0 var(--shadow); padding:16px 10px; cursor:pointer;
+    font-family:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:120px; transition:transform .05s;}
+  .vs-card:hover:not(:disabled){border-color:var(--cyan); transform:translateY(-2px);}
+  .vs-card:disabled{cursor:default;}
+  .vs-card .name{font-size:14px; line-height:1.35;}
+  .vs-card .loc{font-size:9px; color:var(--cyan); margin-top:8px;}
+  .vs-card .vs-rate{font-size:26px; color:var(--green); margin-top:10px; height:0; opacity:0; overflow:hidden; transition:opacity .2s;}
+  .vs-card.revealed .vs-rate{height:auto; opacity:1;}
+  .vs-card .vs-mark{font-size:10px; margin-top:6px; min-height:12px; letter-spacing:1px;}
+  .vs-card.winner{border-color:var(--green); box-shadow:0 0 16px var(--green), 4px 4px 0 var(--shadow);}
+  .vs-card.winner .vs-rate{color:var(--green);}
+  .vs-card.winner .vs-mark{color:var(--green);}
+  .vs-card.loser{opacity:.78;}
+  .vs-card.loser .vs-rate{color:var(--dim);}
+  .vs-card.picked-wrong{border-color:var(--red); box-shadow:0 0 16px var(--red), 4px 4px 0 var(--shadow);}
+  .vs-card.picked-wrong .vs-mark{color:var(--red);}
+  .vs-card.picked .vs-mark::after{content:" ◄ YOUR PICK";}
+  .vs-badge{display:flex; align-items:center; font-size:16px; color:var(--pink); padding:0 2px;
+    text-shadow:2px 2px 0 var(--purple);}
+
+  @media (max-height: 820px){
+    .vs-prompt{font-size:11px; margin:2px 0 8px;}
+    .vs-card{min-height:96px; padding:11px 8px;}
+    .vs-card .name{font-size:12px;}
+    .vs-card .vs-rate{font-size:22px;}
+    .modebtn{padding:9px;}
+  }
+  @media (max-width:520px){
+    .vs-arena{flex-direction:column;}
+    .vs-badge{justify-content:center; padding:2px 0;}
+  }
 </style>
 </head>
 <body>
@@ -268,10 +315,16 @@
   <section id="titleScreen" class="screen on">
     <div class="box center">
       <h1 class="title-grad">GUESS THE<br>ADMIT RATE</h1>
-      <div class="sub">▸ how selective is that school? ◂</div>
-      <p class="smallnote">You'll see a college. Guess its acceptance rate (0–100%).<br>
+      <div class="sub" id="modeTagline">▸ how selective is that school? ◂</div>
+      <p class="smallnote" id="modeBlurb">You'll see a college. Guess its acceptance rate (0–100%).<br>
       The closer you land, the more coins you bank.<br>
       Stuck? Spend a HINT — but it shaves your max score.</p>
+
+      <div class="sub">GAME MODE</div>
+      <div class="modes">
+        <button class="modebtn sel" data-mode="rate">🎯 GUESS THE RATE<br><span>name the % admitted</span></button>
+        <button class="modebtn" data-mode="vs">⚔️ HEAD-TO-HEAD<br><span>pick the more selective</span></button>
+      </div>
 
       <div class="sub">SELECT DIFFICULTY</div>
       <div class="diffs">
@@ -375,15 +428,84 @@
     </div>
   </section>
 
+  <!-- ============ HEAD-TO-HEAD ============ -->
+  <section id="vsScreen" class="screen">
+    <div class="box">
+      <div id="hud">
+        <div class="hud-left">
+          <div class="lives" id="vsLives">♥♥♥</div>
+          <div class="coins"><span class="coin"></span> <span id="vsScoreVal">0</span> <span id="vsStreakBadge" style="color:var(--yellow); font-size:11px; margin-left:6px">🔥 0</span></div>
+        </div>
+        <div class="hud-right">
+          <div class="hi">HIGH SCORE</div>
+          <div class="hiVal" id="vsHudBest">0</div>
+          <button class="ghost" id="vsMenuBtn">MAIN MENU</button>
+        </div>
+      </div>
+
+      <div class="vs-prompt">WHICH IS <span>MORE SELECTIVE?</span><br><span class="vs-sub">(lower acceptance rate wins)</span></div>
+
+      <div class="vs-arena">
+        <button class="vs-card" id="vsCardA" data-side="A">
+          <div class="name"></div>
+          <div class="loc"></div>
+          <div class="vs-rate"></div>
+          <div class="vs-mark"></div>
+        </button>
+        <div class="vs-badge">VS</div>
+        <button class="vs-card" id="vsCardB" data-side="B">
+          <div class="name"></div>
+          <div class="loc"></div>
+          <div class="vs-rate"></div>
+          <div class="vs-mark"></div>
+        </button>
+      </div>
+
+      <div id="vsHints" class="hints">
+        <div class="hint" data-h="rank">
+          <div class="row" style="justify-content:space-between"><span class="lbl">US NEWS RANK</span><span class="cost">−50</span></div>
+          <div class="reveal"></div>
+          <button>REVEAL BOTH</button>
+        </div>
+        <div class="hint" data-h="apps">
+          <div class="row" style="justify-content:space-between"><span class="lbl">APPLICANTS</span><span class="cost">−30</span></div>
+          <div class="reveal"></div>
+          <button>REVEAL BOTH</button>
+        </div>
+        <div class="hint" data-h="enr">
+          <div class="row" style="justify-content:space-between"><span class="lbl">ENROLLMENT</span><span class="cost">−30</span></div>
+          <div class="reveal"></div>
+          <button>REVEAL BOTH</button>
+        </div>
+      </div>
+
+      <div class="smallnote center" style="margin-top:10px">Round worth <span id="vsRoundMax" style="color:var(--green)">100</span> pts · click a school to lock it in</div>
+
+      <div id="vsResult" class="center" style="display:none; margin-top:10px">
+        <div class="verdict" id="vsVerdict"></div>
+        <div class="gained" id="vsGained"></div>
+        <div class="row" style="justify-content:center; margin-top:10px">
+          <button class="alt" id="vsNextBtn">NEXT ▶</button>
+        </div>
+      </div>
+
+      <div class="statstrip">
+        <div class="st-round">STREAK<b id="vsStreakVal">0</b></div>
+        <div class="st-streak">SCORE<b id="vsTotalVal">0</b></div>
+        <div class="st-mean">DIFFICULTY<b id="vsDiffVal">—</b></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ GAME OVER ============ -->
   <section id="overScreen" class="screen gameover">
     <div class="box center">
       <h1 class="big">GAME OVER</h1>
       <p style="font-size:16px; color:var(--green)">FINAL SCORE</p>
       <p style="font-size:34px; color:var(--green)" id="finalScore">0</p>
-      <p class="smallnote">Best run this round: <span id="bestSchool" class="hs"></span></p>
+      <p class="smallnote" id="overLine1"></p>
       <p style="font-size:11px">High score: <span class="hs" id="overHs">0</span> <span id="newHs" style="color:var(--pink); display:none">★NEW!★</span></p>
-      <p class="smallnote">Reached round <span id="overRound" class="hs">1</span> · <span id="overAcc" class="hs">0</span> avg error</p>
+      <p class="smallnote" id="overLine2"></p>
 
       <div id="initialsEntry" style="display:none">
         <div class="prompt" id="initPrompt">★ NEW HIGH SCORE — ENTER INITIALS ★</div>
@@ -410,13 +532,17 @@
   <section id="lbScreen" class="screen">
     <div class="box">
       <h1 class="title-grad" style="font-size:18px; text-align:center">🏆 LEADERBOARD</h1>
+      <div class="lb-tabs lb-modes">
+        <button data-lbmode="rate">🎯 GUESS THE RATE</button>
+        <button data-lbmode="vs">⚔️ HEAD-TO-HEAD</button>
+      </div>
       <div class="lb-tabs">
         <button data-lb="easy">EASY</button>
         <button data-lb="medium">MEDIUM</button>
         <button data-lb="hard">HARD</button>
       </div>
       <table class="lb">
-        <thead><tr><th>#</th><th>NAME</th><th class="r">SCORE</th><th class="r">RND</th><th class="r">ERR</th></tr></thead>
+        <thead><tr><th>#</th><th>NAME</th><th class="r">SCORE</th><th class="r" id="lbCol4">RND</th><th class="r" id="lbCol5">ERR</th></tr></thead>
         <tbody id="lbBody"></tbody>
       </table>
       <div class="lb-yourank" id="lbYouRank"></div>
@@ -558,7 +684,7 @@ function startGame(diff){
   // shuffle a working deck so we don't repeat until exhausted
   const deck=pool.slice();
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]];}
-  state={diff, deck, idx:0, score:0, lives:3, streak:0, round:0, guesses:0, errSum:0, best:null, bestErr:999};
+  state={mode:'rate', diff, deck, idx:0, score:0, lives:3, streak:0, round:0, guesses:0, errSum:0, best:null, bestErr:999};
   state.dist=buildDist(pool.map(s=>s.ar));
   $('#hudHi').textContent=fmt(getHS());
   show('#gameScreen');
@@ -775,19 +901,28 @@ $('#nextBtn').addEventListener('click',()=>{ if(state.lives>0) nextRound(); });
 
 function gameOver(){
   sfx.over();
-  const hs=getHS(); const isNew=state.score>hs;
-  if(isNew) setHS(state.score);
-  $('#finalScore').textContent=fmt(state.score);
-  $('#overHs').textContent=fmt(Math.max(hs,state.score));
-  $('#newHs').style.display=isNew?'inline':'none';
-  $('#overRound').textContent=state.round;
-  $('#bestSchool').textContent=state.best? (state.best+' (±'+state.bestErr.toFixed(1)+')') : '—';
-  const avg=state.guesses? (state.errSum/state.guesses):0;
-  $('#overAcc').textContent='±'+avg.toFixed(1);
-  $('#titleHs').textContent=fmt(getHS());
+  const isVs = state.mode==='vs';
+  const prevBest = getBest(state.mode);
+  const isNew = state.score>prevBest;
+  if(isNew) localStorage.setItem(bestKeyFor(state.mode), state.score);
 
-  // set up leaderboard submission for this run
-  pending={ score:state.score, difficulty:state.diff, round:state.round, meanError:+avg.toFixed(2) };
+  $('#finalScore').textContent=fmt(state.score);
+  $('#overHs').textContent=fmt(Math.max(prevBest,state.score));
+  $('#newHs').style.display=isNew?'inline':'none';
+
+  const diffLabel=({easy:'Easy',medium:'Medium',hard:'Hard'})[state.diff]||state.diff;
+  if(isVs){
+    $('#overLine1').innerHTML=`Longest streak: <span class="hs">${state.bestStreak} in a row</span>`;
+    $('#overLine2').innerHTML=`Mode: <span class="hs">⚔️ Head-to-Head · ${diffLabel}</span>`;
+    pending={ score:state.score, difficulty:'vs-'+state.diff, round:state.bestStreak, meanError:0 };
+  } else {
+    const avg=state.guesses? (state.errSum/state.guesses):0;
+    $('#overLine1').innerHTML=`Best guess: <span class="hs">${state.best? (state.best+' (±'+state.bestErr.toFixed(1)+')') : '—'}</span>`;
+    $('#overLine2').innerHTML=`Reached round <span class="hs">${state.round}</span> · <span class="hs">±${avg.toFixed(1)}</span> avg error`;
+    pending={ score:state.score, difficulty:state.diff, round:state.round, meanError:+avg.toFixed(2) };
+  }
+  $('#titleHs').textContent=fmt(getBest(selectedMode));
+
   lastSubmitId=null;
   $('#initPrompt').textContent = isNew ? '★ NEW PERSONAL BEST — ENTER INITIALS ★' : 'ENTER INITIALS FOR THE LEADERBOARD';
   setInitials(localStorage.getItem('lastInitials')||'AAA'); activeSlot=0; renderInitials();
@@ -797,9 +932,9 @@ function gameOver(){
   show('#overScreen');
 }
 
-// menu buttons
-document.querySelectorAll('[data-diff]').forEach(b=>b.addEventListener('click',()=>{sfx.click(); startGame(b.dataset.diff);}));
-$('#againBtn').addEventListener('click',()=>{sfx.click(); startGame(state.diff);});
+// menu buttons — difficulty launches whichever mode is selected
+document.querySelectorAll('[data-diff]').forEach(b=>b.addEventListener('click',()=>{sfx.click(); (selectedMode==='vs'?startVs:startGame)(b.dataset.diff);}));
+$('#againBtn').addEventListener('click',()=>{sfx.click(); (state.mode==='vs'?startVs:startGame)(state.diff);});
 $('#menuBtn').addEventListener('click',()=>{sfx.click(); show('#titleScreen');});
 $('#hudMenuBtn').addEventListener('click',()=>{sfx.click(); $('#titleHs').textContent=fmt(getHS()); show('#titleScreen');});
 
@@ -818,12 +953,143 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+// ======================= GAME MODE + HEAD-TO-HEAD =======================
+let selectedMode='rate';
+function bestKeyFor(mode){ return mode==='vs'?'guessAdmitVsBest':HS_KEY; }
+function getBest(mode){ return +(localStorage.getItem(bestKeyFor(mode))||0); }
+function updateTitleBest(){ $('#titleHs').textContent=fmt(getBest(selectedMode)); }
+function updateModeUI(){
+  document.querySelectorAll('.modebtn').forEach(b=>b.classList.toggle('sel', b.dataset.mode===selectedMode));
+  if(selectedMode==='vs'){
+    $('#modeTagline').textContent='▸ which school is harder to get into? ◂';
+    $('#modeBlurb').innerHTML="Two colleges go head-to-head — pick the <b>more selective</b> one (smaller % admitted).<br>Build the longest streak. You've got <b>3 lives</b> — three wrong picks and you're out.";
+  } else {
+    $('#modeTagline').textContent='▸ how selective is that school? ◂';
+    $('#modeBlurb').innerHTML="You'll see a college. Guess its acceptance rate (0–100%).<br>The closer you land, the more coins you bank.<br>Stuck? Spend a HINT — but it shaves your max score.";
+  }
+  updateTitleBest();
+}
+document.querySelectorAll('.modebtn').forEach(b=>b.addEventListener('click',()=>{ selectedMode=b.dataset.mode; sfx.click(); updateModeUI(); }));
+
+function startVs(diff){
+  const p=SCHOOLS.filter(POOLS[diff]);
+  state={mode:'vs', diff, pool:p, score:0, lives:3, streak:0, bestStreak:0, answered:false, roundMax:100, hintsUsed:{}, prevPair:null};
+  $('#vsHudBest').textContent=fmt(getBest('vs'));
+  $('#vsDiffVal').textContent=({easy:'EASY',medium:'MED',hard:'HARD'})[diff]||diff;
+  show('#vsScreen');
+  nextMatchup();
+}
+function pickPair(){
+  const p=state.pool;
+  const minGap = state.diff==='easy' ? 3 : 4;
+  for(let t=0;t<200;t++){
+    const a=p[Math.floor(Math.random()*p.length)];
+    const b=p[Math.floor(Math.random()*p.length)];
+    if(a===b || Math.abs(a.ar-b.ar)<minGap) continue;
+    if(state.prevPair && [a.n,b.n].every(n=>state.prevPair.includes(n))) continue;
+    return [a,b];
+  }
+  const a=p[Math.floor(Math.random()*p.length)];
+  const b=p.find(s=>s.ar!==a.ar)||p[(p.indexOf(a)+1)%p.length];
+  return [a,b];
+}
+function setCard(side,s){
+  const card=$('#vsCard'+side);
+  card.className='vs-card'; card.disabled=false;
+  card.querySelector('.name').textContent=s.n;
+  card.querySelector('.loc').textContent=s.st?('📍 '+s.st):'';
+  card.querySelector('.vs-rate').textContent=s.ar+'%';
+  card.querySelector('.vs-mark').textContent='';
+}
+function nextMatchup(){
+  const [a,b]=pickPair();
+  state.A=a; state.B=b; state.prevPair=[a.n,b.n];
+  state.answered=false; state.roundMax=100; state.hintsUsed={rank:false,apps:false,enr:false};
+  setCard('A',a); setCard('B',b);
+  $('#vsHints').querySelectorAll('.hint').forEach(h=>{ h.querySelector('.reveal').textContent=''; const btn=h.querySelector('button'); btn.disabled=false; btn.textContent='REVEAL BOTH'; });
+  $('#vsRoundMax').textContent='100';
+  $('#vsResult').style.display='none';
+  $('#vsNextBtn').style.display='';
+  $('#vsHints').style.display='';
+  syncVsHud();
+}
+function syncVsHud(){
+  $('#vsLives').textContent='♥'.repeat(Math.max(0,state.lives))+'·'.repeat(Math.max(0,3-state.lives));
+  $('#vsScoreVal').textContent=fmt(state.score);
+  $('#vsStreakBadge').textContent='🔥 '+state.streak;
+  $('#vsStreakVal').textContent=state.streak;
+  $('#vsTotalVal').textContent=fmt(state.score);
+  $('#vsHudBest').textContent=fmt(Math.max(getBest('vs'),state.score));
+}
+$('#vsHints').addEventListener('click',e=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  const card=btn.closest('.hint'); const h=card.dataset.h;
+  if(state.answered||state.hintsUsed[h]) return;
+  state.hintsUsed[h]=true;
+  state.roundMax=Math.max(10, state.roundMax-(h==='rank'?50:30));
+  $('#vsRoundMax').textContent=state.roundMax;
+  const v=s=> h==='rank' ? (s.r?('#'+s.r):'unranked') : h==='apps' ? (s.ap!=null?fmt(s.ap):'N/A') : (s.en!=null?fmt(s.en):'N/A');
+  card.querySelector('.reveal').innerHTML=`LEFT <b style="color:var(--yellow)">${v(state.A)}</b> &nbsp;·&nbsp; RIGHT <b style="color:var(--yellow)">${v(state.B)}</b>`;
+  btn.disabled=true; btn.textContent='USED';
+  sfx.hint();
+});
+function vsPick(side){
+  if(state.answered) return;
+  state.answered=true;
+  const A=state.A, B=state.B, tie=A.ar===B.ar;
+  const correctSide = tie? side : (A.ar<B.ar?'A':'B');
+  const correct = tie || side===correctSide;
+  ['A','B'].forEach(sd=>{
+    const card=$('#vsCard'+sd); card.classList.add('revealed'); card.disabled=true;
+    if(tie || sd===correctSide){ card.classList.add('winner'); card.querySelector('.vs-mark').textContent='MORE SELECTIVE'; }
+    else card.classList.add('loser');
+    if(sd===side){ card.classList.add('picked'); if(!correct) card.classList.add('picked-wrong'); }
+  });
+  $('#vsHints').style.display='none';
+  $('#vsResult').style.display='';
+  if(correct){
+    const pts=state.roundMax + state.streak*10;
+    state.score+=pts; state.streak++; state.bestStreak=Math.max(state.bestStreak,state.streak);
+    sfx.good();
+    $('#vsVerdict').innerHTML=`<span style="color:var(--green)">✓ CORRECT!</span> <span style="font-size:9px;color:var(--dim)">${A.ar}% vs ${B.ar}%</span>`;
+    $('#vsGained').textContent='+'+fmt(pts)+' pts';
+    $('#vsNextBtn').style.display='';
+    syncVsHud();
+    if(state.streak>=3) toast('STREAK '+state.streak+'!');
+  } else {
+    sfx.bad();
+    state.streak=0;
+    state.lives--;
+    const dead = state.lives<=0;
+    $('#vsVerdict').innerHTML=`<span style="color:var(--red)">✗ WRONG!</span> <span style="font-size:9px;color:var(--dim)">${A.ar}% vs ${B.ar}%</span>`;
+    $('#vsGained').innerHTML = dead
+      ? `<span style="color:var(--red)">OUT OF LIVES</span>`
+      : `<span style="color:var(--pink)">−1 LIFE · ${state.lives} left</span>`;
+    $('#vsNextBtn').style.display = dead ? 'none' : '';
+    syncVsHud();
+    if(dead) setTimeout(gameOver, 1500);
+  }
+}
+$('#vsCardA').addEventListener('click',()=>vsPick('A'));
+$('#vsCardB').addEventListener('click',()=>vsPick('B'));
+$('#vsNextBtn').addEventListener('click',()=>{ sfx.click(); nextMatchup(); });
+$('#vsMenuBtn').addEventListener('click',()=>{ sfx.click(); updateTitleBest(); show('#titleScreen'); });
+document.addEventListener('keydown',e=>{
+  if(!$('#vsScreen').classList.contains('on')) return;
+  if(!state.answered){
+    if(e.key==='ArrowLeft'){ vsPick('A'); e.preventDefault(); }
+    else if(e.key==='ArrowRight'){ vsPick('B'); e.preventDefault(); }
+  } else if(e.key==='Enter' && $('#vsNextBtn').style.display!=='none'){ $('#vsNextBtn').click(); e.preventDefault(); }
+});
+
 // ======================= LEADERBOARD =======================
 const API='';                       // same origin; e.g. set to 'https://yourhost' if served elsewhere
 const ALPHABET='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 let pending=null, lastSubmitId=null, activeSlot=0;
 let initChars=['A','A','A'];
-let lbDiff='easy';
+let lbMode='rate', lbTier='easy';
+const lbKey=()=>(lbMode==='vs'?'vs-':'')+lbTier;
+function parseDiff(key){ const vs=key.startsWith('vs-'); return {mode:vs?'vs':'rate', tier:vs?key.slice(3):key}; }
 
 function setInitials(str){
   str=(str||'AAA').toUpperCase().replace(/[^A-Z0-9]/g,'').padEnd(3,'A').slice(0,3);
@@ -874,8 +1140,8 @@ $('#submitScoreBtn').addEventListener('click', async ()=>{
     lastSubmitId=data.id;
     sfx.perfect();
     $('#initialsEntry').style.display='none';
-    lbDiff=pending.difficulty; lbReturn='#overScreen';
-    openLeaderboard(lbDiff, {rank:data.rank, total:data.total, top:data.top, id:data.id, initials, score:pending.score});
+    lbReturn='#overScreen';
+    openLeaderboard(pending.difficulty, {rank:data.rank, total:data.total, top:data.top, id:data.id, initials, score:pending.score});
   }catch(err){
     sb.disabled=false; sb.textContent='RETRY — OFFLINE?';
     toast('LEADERBOARD OFFLINE');
@@ -883,15 +1149,18 @@ $('#submitScoreBtn').addEventListener('click', async ()=>{
 });
 
 // open + render leaderboard
-async function openLeaderboard(diff, prefetched){
-  lbDiff=diff||lbDiff;
-  document.querySelectorAll('.lb-tabs button').forEach(b=>b.classList.toggle('sel', b.dataset.lb===lbDiff));
+async function openLeaderboard(diffKey, prefetched){
+  if(diffKey){ const pd=parseDiff(diffKey); lbMode=pd.mode; lbTier=pd.tier; }
+  document.querySelectorAll('.lb-modes button').forEach(b=>b.classList.toggle('sel', b.dataset.lbmode===lbMode));
+  document.querySelectorAll('.lb-tabs:not(.lb-modes) button').forEach(b=>b.classList.toggle('sel', b.dataset.lb===lbTier));
+  if(lbMode==='vs'){ $('#lbCol4').textContent='STREAK'; $('#lbCol5').textContent=''; }
+  else { $('#lbCol4').textContent='RND'; $('#lbCol5').textContent='ERR'; }
   $('#lbYouRank').textContent=''; $('#lbStatus').textContent='loading…'; $('#lbBody').innerHTML='';
   show('#lbScreen');
   let payload=prefetched;
   if(!payload){
     try{
-      const r=await fetch(API+'/api/leaderboard?difficulty='+lbDiff+'&limit=10');
+      const r=await fetch(API+'/api/leaderboard?difficulty='+lbKey()+'&limit=10');
       if(!r.ok) throw new Error('HTTP '+r.status);
       payload=await r.json();
     }catch(err){
@@ -904,15 +1173,17 @@ async function openLeaderboard(diff, prefetched){
 function renderLeaderboard(p){
   const rows=p.top||[];
   const medal=['gold','silver','bronze'];
+  const isVs=lbMode==='vs';
   $('#lbBody').innerHTML = rows.length ? rows.map((row,i)=>{
     const me=(p.id && row.id===p.id) ? ' me' : '';
     const cls=(i<3?medal[i]:'')+me;
+    const c5 = isVs ? '' : (row.mean_error?('±'+(+row.mean_error).toFixed(1)):'–');
     return `<tr class="${cls.trim()}">`+
       `<td class="rank">${i+1}</td>`+
       `<td class="ini">${row.initials}</td>`+
       `<td class="r sc">${fmt(row.score)}</td>`+
       `<td class="r">${row.round||'–'}</td>`+
-      `<td class="r">${row.mean_error?('±'+(+row.mean_error).toFixed(1)):'–'}</td>`+
+      `<td class="r">${c5}</td>`+
     `</tr>`;
   }).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:18px">no scores yet — be the first!</td></tr>`;
   if(p.rank){
@@ -925,10 +1196,11 @@ function renderLeaderboard(p){
 
 // leaderboard nav buttons
 let lbReturn='#titleScreen';
-$('#titleLbBtn').addEventListener('click',()=>{ sfx.click(); lbReturn='#titleScreen'; openLeaderboard(lbDiff); });
-$('#overLbBtn').addEventListener('click',()=>{ sfx.click(); lbReturn='#overScreen'; openLeaderboard(pending?pending.difficulty:lbDiff); });
+$('#titleLbBtn').addEventListener('click',()=>{ sfx.click(); lbReturn='#titleScreen'; lbMode=selectedMode; openLeaderboard(lbKey()); });
+$('#overLbBtn').addEventListener('click',()=>{ sfx.click(); lbReturn='#overScreen'; openLeaderboard(pending?pending.difficulty:lbKey()); });
 $('#lbBackBtn').addEventListener('click',()=>{ sfx.click(); show(lbReturn); });
-document.querySelectorAll('.lb-tabs button').forEach(b=>b.addEventListener('click',()=>{ sfx.click(); openLeaderboard(b.dataset.lb); }));
+document.querySelectorAll('.lb-modes button').forEach(b=>b.addEventListener('click',()=>{ sfx.click(); lbMode=b.dataset.lbmode; openLeaderboard(lbKey()); }));
+document.querySelectorAll('.lb-tabs:not(.lb-modes) button').forEach(b=>b.addEventListener('click',()=>{ sfx.click(); lbTier=b.dataset.lb; openLeaderboard(lbKey()); }));
 </script>
 </body>
 </html>
