@@ -1,0 +1,12 @@
+# runtime database (created on first server run)
+leaderboard.db
+leaderboard.db-wal
+leaderboard.db-shm
+*.db
+
+# dependencies (none required, but just in case)
+node_modules/
+
+# editor / OS / local tooling
+.DS_Store
+.claude/
